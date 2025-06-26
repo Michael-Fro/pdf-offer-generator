@@ -22,13 +22,8 @@ def add_image_page(pdf, image_path):
     page_w = img_w * 25.4 / dpi
     page_h = img_h * 25.4 / dpi
 
-    # Izveido jaunu pagaidu PDF objektu ar pielāgotu izmēru
-    tmp_pdf = FPDF(orientation="P", unit="mm", format=(page_w, page_h))
-    tmp_pdf.add_page()
-    tmp_pdf.image(image_path, x=0, y=0, w=page_w, h=page_h)
-
-    # Apvieno lapu ar galveno PDF
-    pdf.pages.extend(tmp_pdf.pages)
+    pdf.add_page(format=(page_w, page_h))
+    pdf.image(image_path, x=0, y=0, w=page_w, h=page_h)
 
 def add_pdf_as_images(pdf, pdf_path):
     doc = fitz.open(pdf_path)
