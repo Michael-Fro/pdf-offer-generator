@@ -50,7 +50,7 @@ def main():
 
             reader = PdfReader(offer_path)
             full_text = "
-".join(page.extract_text() or "" for page in reader.pages)
+".join(page.extract_text() or "" for page in reader.pages).join(page.extract_text() or "" for page in reader.pages)
             detected = extract_keywords(full_text)
 
             all_images = []
