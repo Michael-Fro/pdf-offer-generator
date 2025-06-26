@@ -49,4 +49,26 @@ def main():
                 f.write(offer_pdf.read())
 
             reader = PdfReader(offer_path)
-            full_text = "\n".join(page.extract_text() or "" for page in reader.pages)
+            full_text = "
+".join(page.extract_text() or "" for page in reader.pages)
+            detected = extract_keywords(full_text)
+
+            all_images = []
+            all_images.extend(convert_pdf_to_images("static/title.pdf"))
+            all_images.extend(convert_pdf_to_images(offer_path))
+
+            for key, img_name in detected.items():
+                img_path = os.path.join("images", img_name)
+                if os.path.exists(img_path):
+                    all_images.append(img_path)
+
+            all_images.extend(convert_pdf_to_images("static/end.pdf"))
+
+            resized_images = [resize_image(img) for img in all_images]
+
+            output_path = os.path.join(tmpdir, "output.pdf")
+            with open(output_path, "wb") as f:
+                f.write(img2pdf.convert(resized_images))
+
+            with open(output_path, "rb") as f:
+                st.download_button("Lejupielādēt ģenerēto PDF", f, file_name="piedavajums.pdf")
