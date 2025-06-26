@@ -50,5 +50,3 @@ def main():
 
             reader = PdfReader(offer_path)
             full_text = "\n".join(page.extract_text() or "" for page in reader.pages)
- "
-".join(page.extract_text() or "" for page in reader.pages)
