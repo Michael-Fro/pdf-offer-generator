@@ -4,3 +4,4 @@ fpdf
 Pillow
 pdf2image
 PyMuPDF
+img2pdf
