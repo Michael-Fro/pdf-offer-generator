@@ -2,7 +2,7 @@ import streamlit as st
 from PyPDF2 import PdfReader
 from fpdf import FPDF
 from PIL import Image
-from pdf2image import convert_from_path
+import fitz  # PyMuPDF
 import tempfile
 import os
 
@@ -31,12 +31,14 @@ def add_image_page(pdf, image_path):
     pdf.image(image_path, x=x, y=y, w=display_w, h=display_h)
 
 def add_pdf_as_images(pdf, pdf_path):
-    images = convert_from_path(pdf_path, dpi=150)
-    for img in images:
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp_img:
-            img.save(tmp_img.name, "JPEG")
+    doc = fitz.open(pdf_path)
+    for page in doc:
+        pix = page.get_pixmap(dpi=150)
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tmp_img:
+            pix.save(tmp_img.name)
             add_image_page(pdf, tmp_img.name)
             os.unlink(tmp_img.name)
+    doc.close()
 
 def main():
     st.title("Automātiska PDF piedāvājuma ģenerēšana")
