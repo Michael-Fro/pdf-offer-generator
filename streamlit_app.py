@@ -42,17 +42,11 @@ def main():
     st.title("Automātiska PDF piedāvājuma ģenerēšana")
 
     offer_pdf = st.file_uploader("Augšupielādē piedāvājuma PDF", type="pdf")
-    title_page = st.file_uploader("Titullapa (PDF)", type="pdf")
-    end_page = st.file_uploader("Beigu lapa (PDF)", type="pdf")
 
-    if st.button("Ģenerēt piedāvājumu") and offer_pdf and title_page and end_page:
+    if st.button("Ģenerēt piedāvājumu") and offer_pdf:
         with tempfile.TemporaryDirectory() as tmpdir:
             offer_path = os.path.join(tmpdir, "offer.pdf")
-            title_path = os.path.join(tmpdir, "title.pdf")
-            end_path = os.path.join(tmpdir, "end.pdf")
             with open(offer_path, "wb") as f: f.write(offer_pdf.read())
-            with open(title_path, "wb") as f: f.write(title_page.read())
-            with open(end_path, "wb") as f: f.write(end_page.read())
 
             reader = PdfReader(offer_path)
             full_text = "\n".join(page.extract_text() or "" for page in reader.pages)
@@ -61,7 +55,8 @@ def main():
             pdf = FPDF()
             pdf.set_auto_page_break(auto=True, margin=15)
 
-            add_pdf_content(pdf, title_path)
+            # Titullapa no repozitorija
+            add_pdf_content(pdf, "static/title.pdf")
             add_pdf_content(pdf, offer_path)
 
             for key, img_name in detected.items():
@@ -69,7 +64,8 @@ def main():
                 if os.path.exists(image_path):
                     add_image_page(pdf, image_path)
 
-            add_pdf_content(pdf, end_path)
+            # Beigu lapa no repozitorija
+            add_pdf_content(pdf, "static/end.pdf")
 
             output_path = os.path.join(tmpdir, "output.pdf")
             pdf.output(output_path)
