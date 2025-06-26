@@ -49,5 +49,4 @@ def main():
                 f.write(offer_pdf.read())
 
             reader = PdfReader(offer_path)
-            full_text = "
-".join(page.extract_text() or "" for page in reader.pages)
+            full_text = "\n".join(page.extract_text() or "" for page in reader.pages)
