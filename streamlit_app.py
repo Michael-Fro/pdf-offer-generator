@@ -2,6 +2,7 @@ import streamlit as st
 from PyPDF2 import PdfReader
 from fpdf import FPDF
 from PIL import Image
+from pdf2image import convert_from_path
 import tempfile
 import os
 
@@ -29,15 +30,13 @@ def add_image_page(pdf, image_path):
     pdf.add_page()
     pdf.image(image_path, x=x, y=y, w=display_w, h=display_h)
 
-def add_pdf_content(pdf, pdf_path, font_path):
-    reader = PdfReader(pdf_path)
-    pdf.add_font("DejaVu", "", font_path, uni=True)
-    for page in reader.pages:
-        pdf.add_page()
-        text = page.extract_text()
-        if text:
-            pdf.set_font("DejaVu", size=12)
-            pdf.multi_cell(0, 10, text)
+def add_pdf_as_images(pdf, pdf_path):
+    images = convert_from_path(pdf_path, dpi=150)
+    for img in images:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp_img:
+            img.save(tmp_img.name, "JPEG")
+            add_image_page(pdf, tmp_img.name)
+            os.unlink(tmp_img.name)
 
 def main():
     st.title("Automātiska PDF piedāvājuma ģenerēšana")
@@ -56,17 +55,15 @@ def main():
             pdf = FPDF()
             pdf.set_auto_page_break(auto=True, margin=15)
 
-            font_path = os.path.join("fonts", "DejaVuSans.ttf")
-
-            add_pdf_content(pdf, "static/title.pdf", font_path)
-            add_pdf_content(pdf, offer_path, font_path)
+            add_pdf_as_images(pdf, "static/title.pdf")
+            add_pdf_as_images(pdf, offer_path)
 
             for key, img_name in detected.items():
                 image_path = os.path.join("images", img_name)
                 if os.path.exists(image_path):
                     add_image_page(pdf, image_path)
 
-            add_pdf_content(pdf, "static/end.pdf", font_path)
+            add_pdf_as_images(pdf, "static/end.pdf")
 
             output_path = os.path.join(tmpdir, "output.pdf")
             pdf.output(output_path, "F")
