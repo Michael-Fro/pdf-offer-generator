@@ -45,10 +45,6 @@ def main():
     title_page = st.file_uploader("Titullapa (PDF)", type="pdf")
     end_page = st.file_uploader("Beigu lapa (PDF)", type="pdf")
 
-    images = {}
-    for label in ["1pildins.jpg", "2pildini.jpeg", "scandi_uzbuve.jpeg"]:
-        images[label] = st.file_uploader(f"Attēls: {label}", type=["jpg", "jpeg", "png"], key=label)
-
     if st.button("Ģenerēt piedāvājumu") and offer_pdf and title_page and end_page:
         with tempfile.TemporaryDirectory() as tmpdir:
             offer_path = os.path.join(tmpdir, "offer.pdf")
@@ -69,10 +65,9 @@ def main():
             add_pdf_content(pdf, offer_path)
 
             for key, img_name in detected.items():
-                if images.get(img_name):
-                    img_path = os.path.join(tmpdir, img_name)
-                    with open(img_path, "wb") as f: f.write(images[img_name].read())
-                    add_image_page(pdf, img_path)
+                image_path = os.path.join("images", img_name)
+                if os.path.exists(image_path):
+                    add_image_page(pdf, image_path)
 
             add_pdf_content(pdf, end_path)
 
