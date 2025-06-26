@@ -26,6 +26,17 @@ def convert_pdf_to_images(pdf_path):
     doc.close()
     return image_paths
 
+def resize_image(image_path, max_width=1000):
+    img = Image.open(image_path)
+    if img.width > max_width:
+        ratio = max_width / img.width
+        new_size = (max_width, int(img.height * ratio))
+        img = img.resize(new_size, Image.ANTIALIAS)
+        resized_path = tempfile.mktemp(suffix=".jpg")
+        img.save(resized_path, format="JPEG")
+        return resized_path
+    return image_path
+
 def main():
     st.title("Automātiska PDF piedāvājuma ģenerēšana")
 
@@ -38,7 +49,8 @@ def main():
                 f.write(offer_pdf.read())
 
             reader = PdfReader(offer_path)
-            full_text = "\n".join(page.extract_text() or "" for page in reader.pages)
+            full_text = "
+".join(page.extract_text() or "" for page in reader.pages)
             detected = extract_keywords(full_text)
 
             all_images = []
@@ -52,9 +64,11 @@ def main():
 
             all_images.extend(convert_pdf_to_images("static/end.pdf"))
 
+            resized_images = [resize_image(img) for img in all_images]
+
             output_path = os.path.join(tmpdir, "output.pdf")
             with open(output_path, "wb") as f:
-                f.write(img2pdf.convert(all_images))
+                f.write(img2pdf.convert(resized_images))
 
             with open(output_path, "rb") as f:
                 st.download_button("Lejupielādēt ģenerēto PDF", f, file_name="piedavajums.pdf")
