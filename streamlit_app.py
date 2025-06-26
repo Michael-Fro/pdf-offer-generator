@@ -18,17 +18,12 @@ def extract_keywords(text):
 def add_image_page(pdf, image_path):
     img = Image.open(image_path)
     img_w, img_h = img.size
-    page_w, page_h = 210, 297
+    # Convert pixels to mm (assuming 96 DPI)
     dpi = 96
-    img_w_mm = img_w * 25.4 / dpi
-    img_h_mm = img_h * 25.4 / dpi
-    scale = min(page_w / img_w_mm, page_h / img_h_mm)
-    display_w = img_w_mm * scale
-    display_h = img_h_mm * scale
-    x = (page_w - display_w) / 2
-    y = (page_h - display_h) / 2
-    pdf.add_page()
-    pdf.image(image_path, x=x, y=y, w=display_w, h=display_h)
+    page_w = img_w * 25.4 / dpi
+    page_h = img_h * 25.4 / dpi
+    pdf.add_page(format=(page_w, page_h))
+    pdf.image(image_path, x=0, y=0, w=page_w, h=page_h)
 
 def add_pdf_as_images(pdf, pdf_path):
     doc = fitz.open(pdf_path)
@@ -54,8 +49,8 @@ def main():
             full_text = "\n".join(page.extract_text() or "" for page in reader.pages)
             detected = extract_keywords(full_text)
 
-            pdf = FPDF()
-            pdf.set_auto_page_break(auto=True, margin=15)
+            pdf = FPDF(unit="mm")
+            pdf.set_auto_page_break(auto=False)
 
             add_pdf_as_images(pdf, "static/title.pdf")
             add_pdf_as_images(pdf, offer_path)
