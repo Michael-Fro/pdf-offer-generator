@@ -29,13 +29,14 @@ def add_image_page(pdf, image_path):
     pdf.add_page()
     pdf.image(image_path, x=x, y=y, w=display_w, h=display_h)
 
-def add_pdf_content(pdf, pdf_path):
+def add_pdf_content(pdf, pdf_path, font_path):
     reader = PdfReader(pdf_path)
+    pdf.add_font("DejaVu", "", font_path, uni=True)
     for page in reader.pages:
         pdf.add_page()
         text = page.extract_text()
         if text:
-            pdf.set_font("Arial", size=12)
+            pdf.set_font("DejaVu", size=12)
             pdf.multi_cell(0, 10, text)
 
 def main():
@@ -55,20 +56,20 @@ def main():
             pdf = FPDF()
             pdf.set_auto_page_break(auto=True, margin=15)
 
-            # Titullapa no repozitorija
-            add_pdf_content(pdf, "static/title.pdf")
-            add_pdf_content(pdf, offer_path)
+            font_path = os.path.join("fonts", "DejaVuSans.ttf")
+
+            add_pdf_content(pdf, "static/title.pdf", font_path)
+            add_pdf_content(pdf, offer_path, font_path)
 
             for key, img_name in detected.items():
                 image_path = os.path.join("images", img_name)
                 if os.path.exists(image_path):
                     add_image_page(pdf, image_path)
 
-            # Beigu lapa no repozitorija
-            add_pdf_content(pdf, "static/end.pdf")
+            add_pdf_content(pdf, "static/end.pdf", font_path)
 
             output_path = os.path.join(tmpdir, "output.pdf")
-            pdf.output(output_path)
+            pdf.output(output_path, "F")
 
             with open(output_path, "rb") as f:
                 st.download_button("Lejupielādēt ģenerēto PDF", f, file_name="piedavajums.pdf")
