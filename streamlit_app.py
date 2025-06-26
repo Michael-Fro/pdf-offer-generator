@@ -1,10 +1,10 @@
 import streamlit as st
 from PyPDF2 import PdfReader
-from fpdf import FPDF
 from PIL import Image
 import fitz  # PyMuPDF
 import tempfile
 import os
+import img2pdf
 
 def extract_keywords(text):
     text = text.lower()
@@ -15,25 +15,16 @@ def extract_keywords(text):
     }
     return {k: v for k, v in keywords.items() if v is not None}
 
-def add_image_page(pdf, image_path):
-    img = Image.open(image_path)
-    img_w, img_h = img.size
-    dpi = 96
-    page_w = img_w * 25.4 / dpi
-    page_h = img_h * 25.4 / dpi
-
-    pdf.add_page(format=(page_w, page_h))
-    pdf.image(image_path, x=0, y=0, w=page_w, h=page_h)
-
-def add_pdf_as_images(pdf, pdf_path):
+def convert_pdf_to_images(pdf_path):
     doc = fitz.open(pdf_path)
-    for page in doc:
+    image_paths = []
+    for i, page in enumerate(doc):
         pix = page.get_pixmap(dpi=150)
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tmp_img:
-            pix.save(tmp_img.name)
-            add_image_page(pdf, tmp_img.name)
-            os.unlink(tmp_img.name)
+        tmp_img_path = tempfile.mktemp(suffix=".jpg")
+        pix.save(tmp_img_path)
+        image_paths.append(tmp_img_path)
     doc.close()
+    return image_paths
 
 def main():
     st.title("Automātiska PDF piedāvājuma ģenerēšana")
@@ -43,27 +34,27 @@ def main():
     if st.button("Ģenerēt piedāvājumu") and offer_pdf:
         with tempfile.TemporaryDirectory() as tmpdir:
             offer_path = os.path.join(tmpdir, "offer.pdf")
-            with open(offer_path, "wb") as f: f.write(offer_pdf.read())
+            with open(offer_path, "wb") as f:
+                f.write(offer_pdf.read())
 
             reader = PdfReader(offer_path)
             full_text = "\n".join(page.extract_text() or "" for page in reader.pages)
             detected = extract_keywords(full_text)
 
-            pdf = FPDF(unit="mm")
-            pdf.set_auto_page_break(auto=False)
-
-            add_pdf_as_images(pdf, "static/title.pdf")
-            add_pdf_as_images(pdf, offer_path)
+            all_images = []
+            all_images.extend(convert_pdf_to_images("static/title.pdf"))
+            all_images.extend(convert_pdf_to_images(offer_path))
 
             for key, img_name in detected.items():
-                image_path = os.path.join("images", img_name)
-                if os.path.exists(image_path):
-                    add_image_page(pdf, image_path)
+                img_path = os.path.join("images", img_name)
+                if os.path.exists(img_path):
+                    all_images.append(img_path)
 
-            add_pdf_as_images(pdf, "static/end.pdf")
+            all_images.extend(convert_pdf_to_images("static/end.pdf"))
 
             output_path = os.path.join(tmpdir, "output.pdf")
-            pdf.output(output_path, "F")
+            with open(output_path, "wb") as f:
+                f.write(img2pdf.convert(all_images))
 
             with open(output_path, "rb") as f:
                 st.download_button("Lejupielādēt ģenerēto PDF", f, file_name="piedavajums.pdf")
